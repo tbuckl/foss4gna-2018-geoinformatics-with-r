@@ -53,7 +53,7 @@ Now we can pull the demographic data of interest for NYC.
 
 note: we wrap the API call 'get_acs' in invisible to suppress the download bar in the output here. you don't need to do that. 
 
-```{r, message=FALSE}
+```{r, message=FALSE, warning=FALSE, results='hide'}
 nyc_counties <- c('005','047','061','081','085')
 race_vars = c("B03002_003", "B03002_004", "B03002_006", "B03002_012")
 

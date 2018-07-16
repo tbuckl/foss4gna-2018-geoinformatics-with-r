@@ -11,7 +11,7 @@ github-repo: tbuckl/foss4gna-2018-geoinformatics-with-r
 description: "Methods for working with geographic vector data in R."
 ---
 
-# Who this book is for
+# Who this workshop is for
 
 Users of traditional Desktop GIS software or Spatial Databases that want to quickly script their analytical work in an expressive language in a familiar user interface.
 
