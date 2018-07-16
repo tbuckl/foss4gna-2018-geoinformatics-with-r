@@ -1,0 +1,19 @@
+bookdown::gitbook:
+  css: style.css
+  includes:
+    in_header: [google-analytics.html]
+  config:
+    toc:
+      before: |
+        <li><a href="./">A Workshop on Geoinformatics with R for FOSS4GNA 2018</a></li>
+      after: |
+        <li><a href="http://www.tbuckl.com" target="blank">tbuckl.com</a></li>
+    edit: https://github.com/tbuckl/foss4gna-2018-geoinformatics-with-r/edit/master/%s
+    download: ["pdf", "epub"]
+bookdown::pdf_book:
+  includes:
+    in_header: preamble.tex
+  latex_engine: xelatex
+  citation_package: natbib
+  keep_tex: yes
+bookdown::epub_book: default

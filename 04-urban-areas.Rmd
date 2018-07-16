@@ -1,0 +1,141 @@
+# Urban Areas/Earth
+
+## Analytical Goal
+
+Estimate the share of the earth's surface that is Urban. 
+
+## Learning Goals
+
+- Finding spatial data 
+- Reading spatial data into R 
+- Putting data on a map. 
+
+## Finding Geospatial Data
+
+One of the most common formats for geospatial data on the internet is GeoJSON. 
+
+You can find over 60k GeoJSON files on GitHub. 
+
+20k of these are indexed at [tibbl.es](http://www.tibbl.es/)
+
+Another source is [ESRI's GeoHub](http://hub.arcgis.com/), which has over 100k data sets. 
+
+## GeoJSON Import
+
+As an example, we will use "Urban Areas" from NaturalEarthData. These data were derived from Remote Sensing data. 
+
+You can browse the data [here](http://www.naturalearthdata.com/downloads/). The options for download there are oriented around Shapefiles. 
+
+I found that [the corresponding GeoJSON url's](https://github.com/nvkelso/natural-earth-vector/tree/master/geojson) from github were the easiest to read into R. 
+
+For example, below we read the boundaries for urban areas into a simple features data frame. 
+
+```{r, cache=TRUE}
+library(sf)
+ne_github_url <- "https://github.com/nvkelso/natural-earth-vector/raw/master/geojson/"
+
+ne_10m_urban_url <- paste0(ne_github_url,"ne_10m_urban_areas.geojson")
+urban_areas_sf <- st_read(ne_10m_urban_url)
+```
+
+## Geometry Column
+
+Lets look at the object we just read in. 
+
+```{r, cache=TRUE}
+head(urban_areas_sf)
+```
+
+Note:
+
+- How many (spatial) features are in the data
+- The proj4string
+- the existing of a geometry column
+- the "geometry type"
+
+### Removing the Geometry Column
+
+Simple features dataframes are also just dataframes. So if you are familiar with dataframes, you may find it useful to just convert them to a dataframe.  
+
+In fact, some of the most viewed questions on gis.stackexchange are about "how to export attribute data" from spatial data files. So it seems likely that lots of people actually want to do this. 
+
+And [here](https://gis.stackexchange.com/questions/224915/extracting-data-frame-from-simple-features-object-in-r) M. Sumner provides a tip on removing the geometry column from an SF object, which gets us the same thing. 
+
+```{r, cache=TRUE}
+urban_areas_df <- urban_areas_sf
+st_geometry(urban_areas_df) <- NULL
+head(urban_areas_df)
+```
+
+## dplyr and simple features 
+
+We can also use dplyr verbs on simple features data frames. 
+
+For example, below we filter the data to the top 2 cities by area. 
+
+```{r, cache=TRUE}
+library(mapview)
+library(dplyr)
+ua1 <- urban_areas_sf %>%
+      arrange(desc(area_sqkm)) %>%
+        filter(between(row_number(), 1, 2))
+head(ua1)
+```
+
+## Mapview
+
+Now we can easily map those rows data with mapview(). 
+
+```{r, cache=TRUE}
+mapview(ua1, map.types="Stamen.TonerLite")
+rm(ua1)
+```
+
+Note that we're using Stamen's TonerLite base tiles. 
+
+You can preview all the "map types" available here: 
+
+http://leaflet-extras.github.io/leaflet-providers/preview/
+
+## Sampling
+
+Another option is to review data frames like this (with lots of complex geometries) is to use sampling.
+
+```{r, cache=TRUE}
+ua2 <- sample_n(urban_areas_sf, 300)
+        
+mapview(ua2, map.types="Stamen.TonerLite")
+rm(ua2)
+```
+
+`sample_n` will randomly sample rows from the data for us. This is useful because leaflet/mapview might throw an error in rendering all 10k rows of the data (depending on your machine). The issue here is not the rows but the complexity of the geometries. 
+
+## Urban / Earth
+
+Finally, lets sample random points from the earth using geosphere and see if we can estimate how much of the earth is covered with "urban areas." 
+
+```{r, eval=TRUE, cache=TRUE, results='hide', warn=FALSE}
+library(geosphere)
+
+m1 <- randomCoordinates(1000)
+df1 <- st_as_sf(as.data.frame(m1),
+                coords = c("lon", "lat"),
+                crs=4326)
+
+(mat = st_within(df1, urban_areas_sf))
+```
+
+Note that `sf` gives us a helpful warning above. We are checking whether these points are within urban areas on a planar coordinate system, rather than a sphere(oid). If you're interested in understanding the accuracy around calculations like this, the [geodist](https://cran.r-project.org/web/packages/geodist/index.html) package is one place to start. Another is Illife's [textbook](https://www.amazon.com/Datums-Map-Projections-Sensing-Surveying/dp/142007041X). 
+
+We'll have to be happy with the cheap solution for now. 
+
+So, how many of these randomly sampled points fall within our "Urban Areas"?
+
+The count of TRUE below indicates how many of the randomly sampled points fell in an Urban Area. 
+
+```{r}
+v1 <- apply(mat, 1, any)
+knitr::kable(table(v1))
+```
+
+

@@ -1,0 +1,75 @@
+# Introduction
+
+## What we will cover
+
+Our goal is to develop an understanding of how to do applied geospatial analysis in R. We'll also touch on a few features of R as a language along the way. 
+
+## Workflow
+
+Using the diagram below as a guide, 
+
+![data-science-workflow.](images/data-science-workflow.png)
+
+(from Gromelund/Wickham 2016)
+
+we’re going to work through a few problems in service of these analytical projects and learning goals:
+
+
+|chapter | analytical goal                                      | learning goal            |
+|--------|------------------------------------------------------|--------------------------|
+|4| Describe GIS questions on StackExchange              | Intro to R/tidyverse            |
+|5| Estimate the portion of the Earth that is "Urban"    | Intro to simple features         |
+|6| Describe the demographics of NYC Subway Lines        | Spatial Joins/Interactives       |
+
+## Visualization
+
+>“The simple graph has brought more information to the data analyst’s mind than any other >device.” — John Tukey (as quoted in Gromelund/Wickham-2016) 
+
+### Mapview
+
+The [mapview](https://github.com/r-spatial/mapview) package is the best place to start for a new user.   
+
+Throughout this workshop we're going to use it to explore out work. 
+
+Its incredibly easy to use. It takes 1 argument, which is a simple features dataframe.
+
+```{r}
+library(mapview)
+mapview(breweries)
+```
+
+R has a number of great packages for interacting with geographic data visually. These packages can change quickly, so the reader is urged to investigate whats available. Another great example is the [tmap](https://cran.r-project.org/web/packages/tmap/index.html) package.  
+
+## GeoJSON in R
+
+We're going to leverage small, in-memory datasets. 
+
+The motivation for this is:
+
+>This is the right place 
+>to start because you can’t tackle big data unless 
+>you have experience with small data...[to] easily handle 
+>hundreds of megabytes of data, and with a little care 
+>you can typically use them to work with 1-2 Gb of data. 
+>If you’re routinely working with larger data (10-100 Gb, say)
+>you should learn more about data.table.. (Gromelund/Wickham-2016) 
+
+A lot of geospatial data are difficult to deal with well in-memory. 
+
+R is great for getting a handle on geospatial problems that can later be scaled up in a spatial database, for example. 
+
+## Tidy Data / Spatial Data
+
+If you come from a geospatial background, 'tidy' data is something you're familiar with. 
+
+The following diagram (Gromelund, Wickham - 2016), identifies how "observations" should fall along rows.
+
+![Tidy Data](images/tidy-1.png)
+
+One simple way of thinking about cartography is as the plotting of observations about geographic features. So each row has an observation about a feature: the height of a tree, the people of a certain age in a census tract. 
+
+Speaking precisely, while many observations that we make about the the world happen at or within approximate cartographic features, none of them actually are exactly those features in the world. 
+
+For example, many Census observations are estimates about a group of people within a geographic feature. But groups of people aren't exact features on the earth. At best our estimates are approximations. 
+
+'Tidy' gives us a vocabulary for communicating about how we move between observations of implicitly geographic features of the world and explicit plots on a map. 

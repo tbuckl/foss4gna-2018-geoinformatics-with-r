@@ -1,0 +1,20 @@
+--- 
+title: "Geoinformatics with R"
+author: "Tom Buckley"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+output: bookdown::gitbook
+documentclass: book
+biblio-style: apalike
+link-citations: yes
+github-repo: tbuckl/foss4gna-2018-geoinformatics-with-r
+description: "Methods for working with geographic vector data in R."
+---
+
+# Who this book is for
+
+Users of traditional Desktop GIS software or Spatial Databases that want to quickly script their analytical work in an expressive language in a familiar user interface.
+
+## Background
+
+These materials were originally part of a workshop at the FOSS4GNA-2018 conference in St Louis. They've been updated for clarity. 

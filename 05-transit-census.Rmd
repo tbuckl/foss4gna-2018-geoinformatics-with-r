@@ -1,0 +1,191 @@
+# Transit & Census
+
+This section is focus on how the concept of `tidy` data that we started with can be extended into working with data standards that contain geospatial information but don't consider that information primary. 
+
+We're going to do so using a modified version of the "Take the A Train" example from the Paul Ramsey's excellent PostGIS training (FOSS4G Denver 2011).
+
+## Analysis Goal
+
+Our goal will be to summarize the self-reported racial and ethnic profile of the New York City Subways. 
+
+## Learning Goal
+
+Joining geospatial data and making an interactive web map.  
+
+## Requirements
+
+You'll need to install a few packages if you don't have them already. 
+
+```{r, eval=FALSE}
+install.packages("tidycensus")
+```
+
+Load some useful packages. 
+
+```{r, include=FALSE}
+library(tidycensus)
+library(tidyr)
+library(dplyr)
+library(sf)
+```
+
+## Census
+
+Now lets load census data for NYC from tidycensus. 
+
+NYC county fips codes:
+
+```
+005 - Bronx
+047 - Kings (Brooklyn)
+061 - New York (Manhattan)
+081 - Queens
+085 - Richmond (Staten Island)
+```
+
+First we'll need to request and add our census API key. You can request a key [here](https://api.census.gov/data/key_signup.html). 
+
+```{r, eval=FALSE}
+census_api_key("YOUR API KEY")
+```
+
+Now we can pull the demographic data of interest for NYC. 
+
+note: we wrap the API call 'get_acs' in invisible to suppress the download bar in the output here. you don't need to do that. 
+
+```{r, message=FALSE}
+nyc_counties <- c('005','047','061','081','085')
+race_vars = c("B03002_003", "B03002_004", "B03002_006", "B03002_012")
+
+race_table_nyc <- invisible(
+                            get_acs(geography = "tract", 
+                                variables = race_vars,
+                                state = "NY", 
+                                county=nyc_counties,
+                                year=2016,
+                                summary_var="B03002_001",
+                                survey = "acs5", 
+                                geometry=TRUE)
+)
+```
+
+## Transit
+
+### Finding Transit Data
+
+There are a number of excellent sites for finding transit data online, including [transitfeeds](https://transitfeeds.com) and [transit.land's Feed Registry](https://transit.land/feed-registry/operators/o-dr5r-nyct). 
+
+Transit.land includes GeoJSON URL's for routes that we can import directly with sf. For example: 
+
+```{r, include=FALSE}
+routes <- st_read("https://transit.land/api/v1/routes.geojson?operated_by=o-dr5r-nyct&per_page=false")
+```
+
+Lets have a look at what data are included. 
+
+We can use R's plot function to plot the routes, careful to set max.plot=1, otherwise a plot is rendered for every column in the data frame.  
+
+```{r}
+plot(routes, max.plot=1)
+```
+
+Looks like this is all of the transit types in NYC. 
+
+```{r}
+unique(routes$vehicle_type)
+```
+
+Lets filter the transit data down to metro lines and plot them again. 
+
+We'll also rename the 'name' field for the route to route_id so its clear what it means when we join it to demographic data. 
+
+```{r}
+metro_routes <- routes %>% filter(vehicle_type=="metro") %>% 
+  rename(route_id=name)
+
+plot(metro_routes, max.plot=1)
+```
+
+OK these look fine. So what are the demographics of neighbording census tracts of NYC trains?
+
+We first need to set the Census and gtfs data to the same Coordinate Reference System (CRS).  
+
+```{r}
+metro_routes <- st_transform(metro_routes, crs=2263)
+race_table_nyc <- st_transform(race_table_nyc, crs=2263)
+```
+
+## dplyr
+
+Now we are close to the goal: summarizing and mapping the racial and ethnic identity profile of NYC Subway line neighborhoods.  
+
+Lets join the routes and race tables spatially. 
+
+```{r}
+route_demographics <- st_join(metro_routes, race_table_nyc)
+```
+
+Now that we have the route id's on the demographic table, I'm going to do some summary work on the data. This will be faster if I drop the geometries off the able for now. 
+
+```{r}
+st_geometry(route_demographics)<-(NULL)
+```
+
+```{r}
+df1 <- route_demographics %>%
+      select(route_id,variable,estimate,summary_est)
+```
+
+Now lets figure out what the demographic profile of the populations around each train is. 
+
+```{r}
+route_demographics <- route_demographics %>%
+  select(route_id,variable,estimate, summary_est) %>%
+  group_by(route_id,variable) %>%
+  summarize(estimate_sum=sum(estimate),
+            percent_of_total=round(sum(estimate)/sum(summary_est),2),
+            total=sum(summary_est))
+```
+
+Lets give the variables better names
+
+```{r}
+shortnames <- c('White', 'Black', 'Asian', 'Hispanic')
+better_names_df <- tibble(variable = race_vars, group_identity=shortnames)
+```
+
+Now lets join that tibble back to our dataframe to fill out the better names in our summary data frame. 
+
+```{r}
+route_demographics <- left_join(route_demographics,better_names_df) %>%
+                  select(route_id,group_identity,percent_of_total)
+head(route_demographics)
+```
+
+## Tidy Maps
+
+And finally, lets put the table on a map. 
+
+This simple action teaches us an important lesson about 2 things:
+
+1) tidy data--each observation is a row in the dataframe
+2) maps--each observation is a geographic unit
+
+![Tidy Data](images/tidy-1.png)
+
+(Gromelund/Wickham-2016)
+
+So we need to spread the census observations out to geographic units. In this case, to subway lines. We'll use the tidyr::spread function to do this. 
+
+```{r}
+route_demographics <- route_demographics %>% spread(group_identity, percent_of_total)
+head(route_demographics)
+```
+
+Now lets join it back to the spatial data and put it on a map. 
+
+```{r}
+route_demographics_sf <- left_join(metro_routes,route_demographics)
+mapview(route_demographics_sf, zcol="Hispanic", legend=TRUE, map.types="Stamen.TonerLite")
+```
+

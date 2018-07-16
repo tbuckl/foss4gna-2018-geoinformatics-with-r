@@ -1,0 +1,5 @@
+book_filename: "foss4gna-2018-geoinformatics-with-r"
+language:
+  ui:
+    chapter_name: "Chapter "
+delete_merged_file: true

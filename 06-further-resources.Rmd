@@ -1,0 +1,55 @@
+# Finding Help
+
+Finding help is typically a blend of the R 'Help' menu and github issues. For packages that are deployed to CRAN, the help is typically a good resource. For those that are not deployed to CRAN, GitHub is a better place to start looking. 
+
+## R help()
+
+For example, the sf help() is very good. It builds on R fundamentals. 
+
+If you don't understand something in it, try inspecting (e.g. plotting) the objects to read between lines. 
+
+```{r}
+library(sf)
+help(st_within)
+
+pts = st_sfc(st_point(c(.5,.5)), st_point(c(1.5, 1.5)), st_point(c(2.5, 2.5)))
+pol = st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0))))
+plot(pts, col="red") ## added inspecting example
+plot(pol, add=TRUE) ## added inspecting example
+(lst = st_intersects(pts, pol))
+lst ## added inspecting example
+(mat = st_intersects(pts, pol, sparse = FALSE))
+mat ## added inspecting example
+# which points fall inside a polygon?
+apply(mat, 1, any)
+lengths(lst) > 0
+# which points fall inside the first polygon?
+st_intersects(pol, pts)[[1]]
+```
+
+## GitHub Issues
+
+I often find that the most up-to-date usage examples are found right in GitHub issues. Reading GitHub issues gives you a good sense of the limitations of a package. Its also a great way to figure out how users and producers of packages interact with one another. 
+
+For example, [in this issue](https://github.com/r-spatial/sf/issues/42), you get a sense for how the developers of the simple features package for R think about tidy spatial data. 
+
+Two github organizations where I frequently look for help are:
+
+- [r-spatial](https://github.com/r-spatial)
+- [rOpenSci](https://github.com/ropensci) 
+
+## Suggested Books
+
+### R for Data Science
+
+[This book](http://r4ds.had.co.nz/) is oriented toward the practice of using R for day to day analytical work. Its written by Hadley and R Studio staff. 
+
+I'm going to highlight quotes from it throughout the talk. 
+
+### Geocomputation with R
+
+[This Book](https://geocompr.robinlovelace.net/) is written by researchers that are actively working on and contributing to various R packages that depend on `sf` and `sp`. 
+
+### Advanced R
+
+[Advanced R](http://adv-r.had.co.nz/) takes a step back. Its helpful for understanding R as a language, especially if you come to R with a bit of a programming background.

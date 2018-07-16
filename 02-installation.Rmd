@@ -1,0 +1,50 @@
+# Installation
+
+Geospatial dependencies can be tricky to set up, whatever your platform or use case. 
+
+## Fast: R Studio Server on AWS
+
+If you have access to an Amazon Web Services account, the fastest way to get started is with the following R Studio Server instance. You connect and log in directly through your browser. It works surprisingly well.
+
+I modified this [Amazon Machine Image](http://www.louisaslett.com/RStudio_AMI/) with a recent installation of the `sf` and `mapview` packages. You can launch it [here](https://console.aws.amazon.com/ec2/home?region=us-west-2#launchAmi=ami-a71555df). Note that you can rent "spot" instances with lots of RAM for very little per hour.
+
+## Local Install
+
+The sf package maintainers have a great [list of instructions](https://github.com/r-spatial/sf#installing) for installation in various environments. 
+
+## FileGDB in R
+
+The instructions below include support for ESRI's FileGDB API. Nominally, this allows you to write to FileGDB. Before instituting this as part of a production workflow, you may want to test how it works for the specific geometry and product mix you are using.  
+
+For example, I found an instance in which I read geometries from Census TIGER with `tidycensus`, did some work on the dataframe, wrote to FileGDB, opened in Arc or Pro with no problems, but then had some polygons dropped when they are pushed to AGOL (via web or Pro). 
+
+```
+apt-get update && apt-get install -y software-properties-common
+add-apt-repository ppa:ubuntugis/ubuntugis-unstable
+
+echo "deb http://cran.rstudio.com/bin/linux/ubuntu xenial/  " >> /etc/apt/sources.list
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+
+apt-get update
+apt-get upgrade -y
+
+#install gdal with filegdb support
+mkdir src
+cd src
+wget https://github.com/Esri/file-geodatabase-api/raw/master/FileGDB_API_1.5/FileGDB_API_1_5_64gcc51.tar.gz
+wget http://download.osgeo.org/gdal/2.2.3/gdal223.zip
+unzip unzip gdal223.zip
+tar xzvf FileGDB_API_1_5_64gcc51.tar.gz
+cd FileGDB_API-64gcc51/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/src/FileGDB_API-64gcc51/lib
+sudo cp lib/*.so /usr/local/lib
+cd gdal-2.2.3/
+./configure --with-fgdb=/home/ubuntu/src/FileGDB_API-64gcc51
+make
+sudo make install
+
+apt-get -y update
+apt-get install -y libcurl4-openssl-dev libgeos-dev libproj-dev libudunits2-dev
+```
+
+
